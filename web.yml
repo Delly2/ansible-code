@@ -1,15 +1,35 @@
----
-- hosts: qaserver
+- name: Install and configure Apache HTTP Server
+  hosts: your_host
   become: yes
-  ignore_errors: yes
-    tasks:
-      - name: Install package
-        package:
-          name: "{{ item }}"
-          state: present
-      with_items:
+
+  tasks:
+    - name: Install required packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop:
         - unzip
         - wget
         - httpd
-      - name: download
-        shell: 
+      vars:
+        ansible_become_password: your_sudo_password
+
+    - name: Download and extract repository archive
+      shell: |
+        cd /tmp
+        wget https://github.com/utrains/static-resume/archive/refs/heads/main.zip
+        unzip main.zip -d /tmp
+      vars:
+        ansible_become_password: your_sudo_password
+
+    - name: Copy files to Apache document root
+      shell: cp -r /tmp/static-resume-main/iPortfolio/* /var/www/html/
+      vars:
+        ansible_become_password: your_sudo_password
+
+    - name: Start and enable Apache service
+      systemd:
+        name: httpd
+        state: started
+        enabled: yes
+
